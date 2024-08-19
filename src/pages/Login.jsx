@@ -3,7 +3,63 @@ import Logo from "../components/Logo";
 import MainButton from "../components/MainButton";
 import { faArrowRight } from "@fortawesome/free-solid-svg-icons";
 
+import { auth, provider } from "../firebase";
+import {
+  isSignInWithEmailLink,
+  sendSignInLinkToEmail,
+  signInWithEmailLink,
+  signInWithPopup,
+} from "firebase/auth";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+
 function Login() {
+  const [email, setEmail] = useState("");
+  const navigate = useNavigate();
+
+  const actionCodeSettings = {
+    url: "http://localhost:5173/",
+    handleCodeInApp: true,
+  };
+
+  function handleSendMaginLink() {
+    sendSignInLinkToEmail(auth, email, actionCodeSettings)
+      .then(() => {
+        //Save the email locally to complete the sign-in
+        window.localStorage.setItem("emailForSignIn", email);
+        alert("Magic link has been sent to your email.");
+      })
+      .catch((error) => {
+        console.log("Error sending magic link: ", error);
+      });
+  }
+
+  function handleLogin() {
+    signInWithPopup(auth, provider).then((data) => {
+      localStorage.setItem("email", data.user.email);
+      navigate("/dashboard");
+    });
+  }
+
+  useEffect(() => {
+    if (isSignInWithEmailLink(auth, window.location.href)) {
+      let email = window.localStorage.getItem("emailForSignIn");
+      if (!email) {
+        email = window.prompt("Please provide your email for confirmation");
+      }
+
+      signInWithEmailLink(auth, email, window.location.href)
+        .then((result) => {
+          console.log(result.user);
+          window.localStorage.removeItem("emailForSignIn");
+          navigate("/dashboard");
+        })
+        .catch((error) => {
+          console.error("Error signing in with email link: ", error);
+        });
+    }
+  }, [navigate]);
+
   return (
     <div className="flex items-center justify-center h-screen">
       <div className="flex">
@@ -21,7 +77,10 @@ function Login() {
               Hi, welcome back!
             </p>
           </div>
-          <button className="bg-gray-100 text-gray-main py-2 px-4 rounded-full mb-4 flex items-center justify-center text-sm">
+          <button
+            className="bg-gray-100 text-gray-main py-2 px-4 rounded-full mb-4 flex items-center justify-center text-sm"
+            onClick={handleLogin}
+          >
             <img
               src="public/google 1.png"
               alt="Google logo"
@@ -38,8 +97,9 @@ function Login() {
             type="email"
             placeholder="Your email"
             className="border border-gray-300 rounded-full py-2 px-4 mb-4 w-full text-sm  focus:outline-none focus:border-main-start focus:ring-1 focus:ring-main-start "
+            onChange={(e) => setEmail(e.target.value)}
           />
-          <MainButton>
+          <MainButton onClick={handleSendMaginLink}>
             Send Magic Link <FontAwesomeIcon icon={faArrowRight} />
           </MainButton>
           <div className="text-center mt-6 text-sm">

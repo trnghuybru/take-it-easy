@@ -15,6 +15,7 @@ export default {
         "gray-normal": "#6C7580",
         "gray-main": "#4B5563",
         background: "#F6F7FB",
+        "word-bg": "#51EAFF",
       },
     },
   },
